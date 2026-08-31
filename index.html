@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <meta name="theme-color" content="#111827">
+
+  <title>Controle de Presença</title>
+
+  <!-- Biblioteca para leitura de QR Code -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+      background: #f3f4f6;
+      color: #111827;
+
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 520px;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin: 10px 0 5px;
+      font-size: 25px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      background: white;
+      border-radius: 18px;
+      overflow: hidden;
+
+      box-shadow:
+        0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    #status {
+      margin-top: 18px;
+
+      padding: 16px;
+
+      border-radius: 12px;
+
+      text-align: center;
+
+      font-size: 17px;
+      font-weight: 600;
+
+      background: #dbeafe;
+      color: #1e40af;
+
+      min-height: 54px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sucesso {
+      background: #dcfce7 !important;
+      color: #166534 !important;
+    }
+
+    .erro {
+      background: #fee2e2 !important;
+      color: #991b1b !important;
+    }
+
+    .info {
+      background: #dbeafe !important;
+      color: #1e40af !important;
+    }
+
+    .aviso {
+      background: #fef3c7 !important;
+      color: #92400e !important;
+    }
+
+    .instrucoes {
+      background: white;
+      border-radius: 12px;
+
+      margin-top: 18px;
+      padding: 16px;
+
+      color: #4b5563;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .instrucoes strong {
+      color: #111827;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+
+      padding: 13px 20px;
+
+      font-size: 16px;
+      font-weight: 600;
+
+      cursor: pointer;
+
+      background: #111827;
+      color: white;
+
+      margin-top: 12px;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    #botao-reiniciar {
+      display: none;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+  <div class="container">
+
+    <h1>📋 Controle de Presença</h1>
+
+    <div class="subtitle">
+      Aponte a câmera para o QR Code do aluno
+    </div>
+
+
+    <div id="reader"></div>
+
+
+    <div
+      id="status"
+      class="info"
+    >
+      📷 Iniciando câmera...
+    </div>
+
+
+    <button
+      id="botao-reiniciar"
+      onclick="reiniciarScanner()"
+    >
+      🔄 Reiniciar câmera
+    </button>
+
+
+    <div class="instrucoes">
+
+      <strong>Como usar:</strong>
+
+      <br><br>
+
+      1. Aponte a câmera para o QR Code do aluno.
+
+      <br>
+
+      2. Aguarde a identificação.
+
+      <br>
+
+      3. A presença será registrada automaticamente.
+
+      <br>
+
+      4. Passe para o próximo aluno.
+
+    </div>
+
+  </div>
+
+
+<script>
+
+  // =====================================================
+  // URL DO SEU GOOGLE APPS SCRIPT
+  // =====================================================
+
+  const API_URL =
+    "https://script.google.com/macros/s/AKfycbww4kfK2H0m2RobNXVXrAJin3oOOxbY4Gpw8tqeUqq72E3BzQ4QayBH5dfc5lAPwPX7Uw/exec";
+
+
+  // =====================================================
+  // CONFIGURAÇÕES
+  // =====================================================
+
+  let scanner = null;
+
+  let processando = false;
+
+
+  // =====================================================
+  // MOSTRAR MENSAGEM
+  // =====================================================
+
+  function mostrarStatus(
+    mensagem,
+    tipo = "info"
+  ) {
+
+    const status =
+      document.getElementById("status");
+
+    status.textContent =
+      mensagem;
+
+    status.className = "";
+
+    status.classList.add(tipo);
+  }
+
+
+  // =====================================================
+  // REGISTRAR PRESENÇA
+  // =====================================================
+
+  async function registrarPresenca(codigo) {
+
+    if (processando) {
+      return;
+    }
+
+    processando = true;
+
+
+    mostrarStatus(
+      "⏳ Registrando presença...",
+      "info"
+    );
+
+
+    try {
+
+      const url =
+        API_URL +
+        "?codigo=" +
+        encodeURIComponent(codigo);
+
+
+      const resposta =
+        await fetch(url);
+
+
+      if (!resposta.ok) {
+
+        throw new Error(
+          "Erro HTTP " +
+          resposta.status
+        );
+
+      }
+
+
+      const resultado =
+        await resposta.json();
+
+
+      // ================================================
+      // PRESENÇA REGISTRADA
+      // ================================================
+
+      if (resultado.sucesso) {
+
+        mostrarStatus(
+
+          "✅ " +
+          resultado.nome +
+          " — presença registrada às " +
+          resultado.hora,
+
+          "sucesso"
+
+        );
+
+      }
+
+
+      // ================================================
+      // DUPLICIDADE
+      // ================================================
+
+      else if (resultado.duplicado) {
+
+        mostrarStatus(
+
+          "⚠️ " +
+          resultado.nome +
+          " já está presente hoje.",
+
+          "aviso"
+
+        );
+
+      }
+
+
+      // ================================================
+      // OUTRO ERRO
+      // ================================================
+
+      else {
+
+        mostrarStatus(
+
+          "❌ " +
+          resultado.mensagem,
+
+          "erro"
+
+        );
+
+      }
+
+
+    }
+
+    catch (erro) {
+
+      console.error(erro);
+
+
+      mostrarStatus(
+
+        "❌ Não foi possível conectar à planilha.",
+
+        "erro"
+
+      );
+
+    }
+
+
+    // ================================================
+    // LIBERAR PARA O PRÓXIMO ALUNO
+    // ================================================
+
+    setTimeout(
+
+      function() {
+
+        processando = false;
+
+        mostrarStatus(
+
+          "📷 Pronto para o próximo aluno.",
+
+          "info"
+
+        );
+
+      },
+
+      1800
+
+    );
+
+  }
+
+
+  // =====================================================
+  // QR CODE DETECTADO
+  // =====================================================
+
+  function onScanSuccess(
+    decodedText,
+    decodedResult
+  ) {
+
+    console.log(
+      "QR detectado:",
+      decodedText
+    );
+
+
+    registrarPresenca(
+      decodedText
+    );
+
+  }
+
+
+  // =====================================================
+  // ERRO NORMAL DE LEITURA
+  // =====================================================
+
+  function onScanFailure(error) {
+
+    // Não fazemos nada.
+    //
+    // O scanner continua procurando
+    // automaticamente.
+
+  }
+
+
+  // =====================================================
+  // INICIAR SCANNER
+  // =====================================================
+
+  function iniciarScanner() {
+
+    mostrarStatus(
+      "📷 Iniciando câmera...",
+      "info"
+    );
+
+
+    scanner =
+      new Html5QrcodeScanner(
+
+        "reader",
+
+        {
+
+          fps: 10,
+
+          qrbox: {
+            width: 250,
+            height: 250
+          },
+
+          rememberLastUsedCamera: true,
+
+          supportedScanTypes: [
+            Html5QrcodeScanType.SCAN_TYPE_CAMERA
+          ]
+
+        },
+
+        false
+
+      );
+
+
+    scanner.render(
+      onScanSuccess,
+      onScanFailure
+    );
+
+  }
+
+
+  // =====================================================
+  // REINICIAR SCANNER
+  // =====================================================
+
+  function reiniciarScanner() {
+
+    location.reload();
+
+  }
+
+
+  // =====================================================
+  // INICIAR QUANDO A PÁGINA CARREGAR
+  // =====================================================
+
+  window.addEventListener(
+    "load",
+    iniciarScanner
+  );
+
+</script>
+
+</body>
+
+</html>

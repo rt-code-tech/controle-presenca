@@ -402,37 +402,19 @@
   // QR CODE DETECTADO
   // =====================================================
 
-async function onScanSuccess(
-  decodedText,
-  decodedResult
-) {
+function onScanSuccess(decodedText, decodedResult) {
 
-  // Se já estamos processando um QR,
-  // ignoramos novas leituras.
   if (processando) {
     return;
   }
 
   processando = true;
 
-  console.log(
-    "QR detectado:",
-    decodedText
-  );
+  console.log("QR detectado:", decodedText);
 
-  try {
-
-    await registrarPresenca(
-      decodedText
-    );
-
-  } catch (erro) {
-
-    console.error(erro);
-
-  }
-
+  registrarPresenca(decodedText);
 }
+
 
 
   // =====================================================

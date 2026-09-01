@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -13,7 +14,6 @@
 
   <title>Controle de Presença</title>
 
-  <!-- Biblioteca para leitura de QR Code -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -63,14 +63,11 @@
       background: white;
       border-radius: 18px;
       overflow: hidden;
-
-      box-shadow:
-        0 4px 15px rgba(0,0,0,0.08);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.08);
     }
 
     #status {
       margin-top: 18px;
-
       padding: 16px;
 
       border-radius: 12px;
@@ -118,39 +115,13 @@
       padding: 16px;
 
       color: #4b5563;
+
       font-size: 14px;
       line-height: 1.5;
     }
 
     .instrucoes strong {
       color: #111827;
-    }
-
-    button {
-      border: none;
-      border-radius: 10px;
-
-      padding: 13px 20px;
-
-      font-size: 16px;
-      font-weight: 600;
-
-      cursor: pointer;
-
-      background: #111827;
-      color: white;
-
-      margin-top: 12px;
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
-    #botao-reiniciar {
-      display: none;
-      margin-left: auto;
-      margin-right: auto;
     }
 
   </style>
@@ -168,9 +139,7 @@
       Aponte a câmera para o QR Code do aluno
     </div>
 
-
     <div id="reader"></div>
-
 
     <div
       id="status"
@@ -179,34 +148,17 @@
       📷 Iniciando câmera...
     </div>
 
-
-    <button
-      id="botao-reiniciar"
-      onclick="reiniciarScanner()"
-    >
-      🔄 Reiniciar câmera
-    </button>
-
-
     <div class="instrucoes">
 
       <strong>Como usar:</strong>
 
       <br><br>
 
-      1. Aponte a câmera para o QR Code do aluno.
+      Aponte a câmera para o QR Code do aluno.
 
       <br>
 
-      2. Aguarde a identificação.
-
-      <br>
-
-      3. A presença será registrada automaticamente.
-
-      <br>
-
-      4. Passe para o próximo aluno.
+      A presença será registrada automaticamente.
 
     </div>
 
@@ -215,74 +167,71 @@
 
 <script>
 
-  // =====================================================
-  // URL DO SEU GOOGLE APPS SCRIPT
-  // =====================================================
 
-  const API_URL =
-    "https://script.google.com/macros/s/AKfycbww4kfK2H0m2RobNXVXrAJin3oOOxbY4Gpw8tqeUqq72E3BzQ4QayBH5dfc5lAPwPX7Uw/exec";
+// =====================================================
+// URL DO GOOGLE APPS SCRIPT
+// =====================================================
 
-
-  // =====================================================
-  // CONFIGURAÇÕES
-  // =====================================================
-
-  let scanner = null;
-
-  let processando = false;
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbww4kfK2H0m2RobNXVXrAJin3oOOxbY4Gpw8tqeUqq72E3BzQ4QayBH5dfc5lAPwPX7Uw/exec";
 
 
-  // =====================================================
-  // MOSTRAR MENSAGEM
-  // =====================================================
+// =====================================================
+// CONTROLE DE LEITURA
+// =====================================================
 
-  function mostrarStatus(
-    mensagem,
-    tipo = "info"
-  ) {
+let processando = false;
 
-    const status =
-      document.getElementById("status");
 
-    status.textContent =
-      mensagem;
+// =====================================================
+// MOSTRAR STATUS
+// =====================================================
 
-    status.className = "";
+function mostrarStatus(mensagem, tipo) {
 
-    status.classList.add(tipo);
+  const status =
+    document.getElementById("status");
+
+  status.textContent = mensagem;
+
+  status.className = "";
+
+  status.classList.add(tipo);
+
+}
+
+
+// =====================================================
+// REGISTRAR PRESENÇA
+// =====================================================
+
+function registrarPresenca(codigo) {
+
+  // Impede qualquer nova leitura enquanto
+  // estamos processando a anterior.
+
+  if (processando) {
+    return;
   }
 
-
-  // =====================================================
-  // REGISTRAR PRESENÇA
-  // =====================================================
-
-  async function registrarPresenca(codigo) {
-
-    if (processando) {
-      return;
-    }
-
-    processando = true;
+  processando = true;
 
 
-    mostrarStatus(
-      "⏳ Registrando presença...",
-      "info"
-    );
+  mostrarStatus(
+    "⏳ Registrando presença...",
+    "info"
+  );
 
 
-    try {
-
-      const url =
-        API_URL +
-        "?codigo=" +
-        encodeURIComponent(codigo);
+  const url =
+    API_URL +
+    "?codigo=" +
+    encodeURIComponent(codigo);
 
 
-      const resposta =
-        await fetch(url);
+  fetch(url)
 
+    .then(function(resposta) {
 
       if (!resposta.ok) {
 
@@ -293,14 +242,16 @@
 
       }
 
+      return resposta.json();
 
-      const resultado =
-        await resposta.json();
+    })
+
+    .then(function(resultado) {
 
 
-      // ================================================
+      // ============================================
       // PRESENÇA REGISTRADA
-      // ================================================
+      // ============================================
 
       if (resultado.sucesso) {
 
@@ -318,9 +269,9 @@
       }
 
 
-      // ================================================
-      // DUPLICIDADE
-      // ================================================
+      // ============================================
+      // DUPLICADO
+      // ============================================
 
       else if (resultado.duplicado) {
 
@@ -337,9 +288,9 @@
       }
 
 
-      // ================================================
+      // ============================================
       // OUTRO ERRO
-      // ================================================
+      // ============================================
 
       else {
 
@@ -354,32 +305,31 @@
 
       }
 
+    })
 
-    }
-
-    catch (erro) {
+    .catch(function(erro) {
 
       console.error(erro);
 
-
       mostrarStatus(
 
-        "❌ Não foi possível conectar à planilha.",
+        "❌ Erro ao conectar à planilha.",
 
         "erro"
 
       );
 
-    }
+    });
 
 
-    // ================================================
-    // LIBERAR PARA O PRÓXIMO ALUNO
-    // ================================================
+  // =================================================
+  // TRAVA DE SEGURANÇA
+  //
+  // Durante 5 segundos nenhuma outra leitura
+  // será aceita.
+  // =================================================
 
-    setTimeout(
-
-  function() {
+  setTimeout(function() {
 
     processando = false;
 
@@ -391,112 +341,98 @@
 
     );
 
-  },
+  }, 5000);
 
-  2000
-
-);
-
-
-  // =====================================================
-  // QR CODE DETECTADO
-  // =====================================================
-
-function onScanSuccess(decodedText, decodedResult) {
-
-  if (processando) {
-    return;
-  }
-
-  processando = true;
-
-  console.log("QR detectado:", decodedText);
-
-  registrarPresenca(decodedText);
 }
 
 
+// =====================================================
+// QR CODE DETECTADO
+// =====================================================
 
-  // =====================================================
-  // ERRO NORMAL DE LEITURA
-  // =====================================================
+function onScanSuccess(decodedText, decodedResult) {
 
-  function onScanFailure(error) {
-
-    // Não fazemos nada.
-    //
-    // O scanner continua procurando
-    // automaticamente.
-
-  }
+  console.log(
+    "QR detectado:",
+    decodedText
+  );
 
 
-  // =====================================================
-  // INICIAR SCANNER
-  // =====================================================
+  registrarPresenca(decodedText);
 
-  function iniciarScanner() {
-
-    mostrarStatus(
-      "📷 Iniciando câmera...",
-      "info"
-    );
+}
 
 
-    scanner =
-      new Html5QrcodeScanner(
+// =====================================================
+// FALHAS NORMAIS DE LEITURA
+// =====================================================
 
-        "reader",
+function onScanFailure(error) {
 
-        {
+  // Não fazemos nada.
+  //
+  // A câmera continua procurando QR Codes.
 
-          fps: 10,
+}
 
-          qrbox: {
-            width: 250,
-            height: 250
-          },
 
-          rememberLastUsedCamera: true,
+// =====================================================
+// INICIAR SCANNER
+// =====================================================
 
-          supportedScanTypes: [
-            Html5QrcodeScanType.SCAN_TYPE_CAMERA
-          ]
+function iniciarScanner() {
 
+  console.log("Iniciando scanner...");
+
+
+  mostrarStatus(
+    "📷 Iniciando câmera...",
+    "info"
+  );
+
+
+  const scanner =
+    new Html5QrcodeScanner(
+
+      "reader",
+
+      {
+        fps: 10,
+
+        qrbox: {
+          width: 250,
+          height: 250
         },
 
-        false
+        rememberLastUsedCamera: true
 
-      );
+      },
 
+      false
 
-    scanner.render(
-      onScanSuccess,
-      onScanFailure
     );
 
-  }
 
+  scanner.render(
 
-  // =====================================================
-  // REINICIAR SCANNER
-  // =====================================================
+    onScanSuccess,
 
-  function reiniciarScanner() {
+    onScanFailure
 
-    location.reload();
-
-  }
-
-
-  // =====================================================
-  // INICIAR QUANDO A PÁGINA CARREGAR
-  // =====================================================
-
-  window.addEventListener(
-    "load",
-    iniciarScanner
   );
+
+}
+
+
+// =====================================================
+// INICIALIZAÇÃO
+// =====================================================
+
+window.addEventListener(
+  "load",
+  iniciarScanner
+);
+
 
 </script>
 

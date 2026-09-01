@@ -379,47 +379,60 @@
 
     setTimeout(
 
-      function() {
+  function() {
 
-        processando = false;
+    processando = false;
 
-        mostrarStatus(
+    mostrarStatus(
 
-          "📷 Pronto para o próximo aluno.",
+      "📷 Pronto para o próximo aluno.",
 
-          "info"
-
-        );
-
-      },
-
-      1800
+      "info"
 
     );
 
-  }
+  },
+
+  2500
+
+);
 
 
   // =====================================================
   // QR CODE DETECTADO
   // =====================================================
 
-  function onScanSuccess(
-    decodedText,
-    decodedResult
-  ) {
+async function onScanSuccess(
+  decodedText,
+  decodedResult
+) {
 
-    console.log(
-      "QR detectado:",
+  // Se já estamos processando um QR,
+  // ignoramos novas leituras.
+  if (processando) {
+    return;
+  }
+
+  processando = true;
+
+  console.log(
+    "QR detectado:",
+    decodedText
+  );
+
+  try {
+
+    await registrarPresenca(
       decodedText
     );
 
+  } catch (erro) {
 
-    registrarPresenca(
-      decodedText
-    );
+    console.error(erro);
 
   }
+
+}
 
 
   // =====================================================

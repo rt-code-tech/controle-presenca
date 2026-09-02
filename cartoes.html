@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Carteirinhas - Controle de Presença</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 20px;
+
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      background: #f3f4f6;
+      color: #111827;
+    }
+
+
+    /* ==========================================
+       PAINEL DE CONTROLE
+       ========================================== */
+
+    .painel {
+
+      max-width: 900px;
+
+      margin: 0 auto 30px;
+
+      padding: 20px;
+
+      background: white;
+
+      border-radius: 12px;
+
+      box-shadow:
+        0 3px 12px rgba(0,0,0,0.08);
+
+      text-align: center;
+
+    }
+
+
+    .painel h1 {
+      margin-top: 0;
+    }
+
+
+    .painel p {
+      color: #6b7280;
+    }
+
+
+    button {
+
+      border: none;
+
+      border-radius: 8px;
+
+      padding: 12px 22px;
+
+      font-size: 16px;
+
+      font-weight: bold;
+
+      cursor: pointer;
+
+      background: #111827;
+
+      color: white;
+
+    }
+
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+
+    /* ==========================================
+       FOLHA A4
+       ========================================== */
+
+    #cartoes {
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, 1fr);
+
+      gap: 12mm;
+
+      max-width: 190mm;
+
+      margin: 0 auto;
+
+    }
+
+
+    /* ==========================================
+       CARTEIRINHA
+       ========================================== */
+
+    .cartao {
+
+      width: 89mm;
+
+      height: 57mm;
+
+      background: white;
+
+      border: 1px solid #9ca3af;
+
+      border-radius: 4mm;
+
+      padding: 5mm;
+
+      display: flex;
+
+      flex-direction: column;
+
+      align-items: center;
+
+      justify-content: space-between;
+
+      text-align: center;
+
+      overflow: hidden;
+
+    }
+
+
+    .titulo {
+
+      font-size: 11px;
+
+      font-weight: bold;
+
+      letter-spacing: 0.5px;
+
+      text-transform: uppercase;
+
+    }
+
+
+    .nome {
+
+      font-size: 15px;
+
+      font-weight: bold;
+
+      margin-top: 2mm;
+
+    }
+
+
+    .matricula {
+
+      font-size: 10px;
+
+      color: #4b5563;
+
+    }
+
+
+    .codigo {
+
+      font-size: 9px;
+
+      color: #6b7280;
+
+    }
+
+
+    .qrcode {
+
+      width: 30mm;
+
+      height: 30mm;
+
+      object-fit: contain;
+
+    }
+
+
+    /* ==========================================
+       IMPRESSÃO
+       ========================================== */
+
+    @media print {
+
+      @page {
+
+        size: A4 portrait;
+
+        margin: 10mm;
+
+      }
+
+
+      body {
+
+        padding: 0;
+
+        background: white;
+
+      }
+
+
+      .painel {
+
+        display: none;
+
+      }
+
+
+      #cartoes {
+
+        display: grid;
+
+        grid-template-columns:
+          repeat(2, 1fr);
+
+        gap: 8mm 10mm;
+
+        width: 190mm;
+
+        margin: 0;
+
+      }
+
+
+      .cartao {
+
+        break-inside: avoid;
+
+        page-break-inside: avoid;
+
+      }
+
+    }
+
+  </style>
+
+</head>
+
+
+<body>
+
+
+  <!-- ========================================
+       PAINEL
+       ======================================== -->
+
+  <div class="painel">
+
+    <h1>
+      🪪 Carteirinhas de Presença
+    </h1>
+
+    <p>
+      Os cartões abaixo foram gerados automaticamente
+      a partir da aba ALUNOS.
+    </p>
+
+    <button onclick="window.print()">
+      🖨️ Imprimir carteirinhas
+    </button>
+
+  </div>
+
+
+  <!-- ========================================
+       CARDS SERÃO INSERIDOS AQUI
+       ======================================== -->
+
+  <div id="cartoes"></div>
+
+
+<script>
+
+
+// =====================================================
+// CONFIGURAÇÃO
+// =====================================================
+
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbww4kfK2H0m2RobNXVXrAJin3oOOxbY4Gpw8tqeUqq72E3BzQ4QayBH5dfc5lAPwPX7Uw/exec";
+
+
+// =====================================================
+// URL DO GERADOR DE QR CODE
+// =====================================================
+
+function gerarQRCode(codigo) {
+
+  return (
+    "https://quickchart.io/qr" +
+    "?text=" +
+    encodeURIComponent(codigo) +
+    "&size=300"
+  );
+
+}
+
+
+// =====================================================
+// CRIAR CARTEIRINHA
+// =====================================================
+
+function criarCartao(aluno) {
+
+  const cartao =
+    document.createElement("div");
+
+  cartao.className = "cartao";
+
+
+  cartao.innerHTML = `
+
+    <div class="titulo">
+      Controle de Presença
+    </div>
+
+    <div class="nome">
+      ${aluno.nome}
+    </div>
+
+    <div class="matricula">
+      Matrícula: ${aluno.matricula}
+    </div>
+
+    <img
+      class="qrcode"
+      src="${gerarQRCode(aluno.codigo)}"
+      alt="QR Code ${aluno.codigo}"
+    >
+
+    <div class="codigo">
+      ${aluno.codigo}
+    </div>
+
+  `;
+
+
+  document
+    .getElementById("cartoes")
+    .appendChild(cartao);
+
+}
+
+
+// =====================================================
+// CARREGAR ALUNOS
+// =====================================================
+
+async function carregarAlunos() {
+
+  const container =
+    document.getElementById("cartoes");
+
+
+  container.innerHTML = `
+
+    <div style="
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px;
+    ">
+      Carregando alunos...
+    </div>
+
+  `;
+
+
+  try {
+
+    const resposta =
+      await fetch(
+        API_URL + "?listar=alunos"
+      );
+
+
+    if (!resposta.ok) {
+
+      throw new Error(
+        "Erro HTTP " +
+        resposta.status
+      );
+
+    }
+
+
+    const alunos =
+      await resposta.json();
+
+
+    container.innerHTML = "";
+
+
+    if (!alunos.length) {
+
+      container.innerHTML = `
+
+        <div style="
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 40px;
+        ">
+
+          Nenhum aluno encontrado.
+
+        </div>
+
+      `;
+
+      return;
+
+    }
+
+
+    alunos.forEach(
+      criarCartao
+    );
+
+
+  } catch (erro) {
+
+    console.error(erro);
+
+
+    container.innerHTML = `
+
+      <div style="
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 40px;
+      ">
+
+        ❌ Não foi possível carregar
+        os alunos.
+
+        <br><br>
+
+        Verifique a conexão com
+        o Google Apps Script.
+
+      </div>
+
+    `;
+
+  }
+
+}
+
+
+// =====================================================
+// INICIAR
+// =====================================================
+
+window.addEventListener(
+  "load",
+  carregarAlunos
+);
+
+
+</script>
+
+
+</body>
+
+</html>
